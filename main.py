@@ -15,28 +15,27 @@ CINZA_EIXO = (150, 150, 150)
 VERMELHO = (220, 40, 40)
 
 
-# -------------------------------
-# DESENHO BASICO DE PIXEL
-# -------------------------------
+# pintar cada pixel individualmente
 def pixel(pixels, x, y, cor):
     # Pinta o pixel apenas se estiver dentro da tela.
     if 0 <= x < LARGURA and 0 <= y < ALTURA:
         pixels[x, y] = cor
 
 
-# -------------------------------
-# ALGORITMO DE BRESENHAM
-# -------------------------------
+# quais pixels devem ser pintados para formar uma reta
 def bresenham(pixels, ponto_a, ponto_b, cor=PRETO):
-    # Rasterizacao de reta para qualquer direcao.
+    # arredondar
     x0, y0 = round(ponto_a[0]), round(ponto_a[1])
     x1, y1 = round(ponto_b[0]), round(ponto_b[1])
 
+    # distancia
     dx = abs(x1 - x0)
     dy = abs(y1 - y0)
 
+    # direcao
     passo_x = 1 if x0 < x1 else -1
     passo_y = 1 if y0 < y1 else -1
+
 
     erro = dx - dy
 
@@ -45,6 +44,8 @@ def bresenham(pixels, ponto_a, ponto_b, cor=PRETO):
 
         if x0 == x1 and y0 == y1:
             break
+
+        # dobro erro somente para nao ter que dividir por 2
 
         dobro_erro = 2 * erro
 
@@ -57,17 +58,17 @@ def bresenham(pixels, ponto_a, ponto_b, cor=PRETO):
             y0 += passo_y
 
 
-# -------------------------------
-# PREENCHIMENTO SCAN-LINE
-# -------------------------------
+# pinta os pixels da parte interna 
 def scanline(pixels, pontos):
-    # Preenche a regiao interna do quadrilatero.
+
+    # de que altura até que altura o quadrado vai
     menor_y = max(0, math.floor(min(y for x, y in pontos)))
     maior_y = min(ALTURA - 1, math.ceil(max(y for x, y in pontos)))
 
+    #e le escolhe um valor de Y e vai procurando os valores de X onde aquela linha cruza as arestas.
     for y in range(menor_y, maior_y + 1):
         linha = y + 0.5  # usa centro do pixel
-        intersecoes = []
+        intersecoes = [] # onde serão guardados os pontos onde essa linha cruza as arestas
 
         for i in range(4):
             x1, y1 = pontos[i]
@@ -93,9 +94,7 @@ def scanline(pixels, pontos):
                 pixel(pixels, x, y, AZUL)
 
 
-# -------------------------------
-# GRADE E EIXOS
-# -------------------------------
+# desenhar a grade de coordenadas, os eixos X e Y e os números que aparecem no fundo da imagem
 def desenhar_grade_eixos(pixels, draw, passo=50):
     # Desenha linhas verticais da grade
     for x in range(0, LARGURA, passo):
@@ -116,9 +115,7 @@ def desenhar_grade_eixos(pixels, draw, passo=50):
     draw.text((5, ALTURA - 20), "Y", fill=CINZA_EIXO)
 
 
-# -------------------------------
-# MARCACAO DOS VERTICES
-# -------------------------------
+# marcar visualmente os vertices e escrever o nome deles
 def desenhar_marcador(pixels, x, y, cor=VERMELHO):
     # Desenha uma pequena cruz no ponto.
     for dx in range(-3, 4):
@@ -150,9 +147,7 @@ def rotular_pontos(pixels, draw, pontos):
         draw.text((tx, ty), texto, fill=VERMELHO)
 
 
-# -------------------------------
-# DESENHO COMPLETO DO QUADRILATERO
-# -------------------------------
+# desenhar
 def desenhar_quadrilatero(pontos, arquivo):
     imagem = Image.new("RGB", (LARGURA, ALTURA), BRANCO)
     pixels = imagem.load()
@@ -174,11 +169,8 @@ def desenhar_quadrilatero(pontos, arquivo):
     imagem.save(arquivo)
 
 
-# -------------------------------
-# CENTROIDE DO QUADRILATERO
-# -------------------------------
+# calcula o centro da imagem
 def centroide(pontos):
-    # Centroide pela formula do poligono.
     area_dupla = 0.0
     soma_x = 0.0
     soma_y = 0.0
@@ -187,31 +179,32 @@ def centroide(pontos):
         x1, y1 = pontos[i]
         x2, y2 = pontos[(i + 1) % 4]
 
+        # formula do cardaco para calcular a area
         cruzado = x1 * y2 - x2 * y1
         area_dupla += cruzado
         soma_x += (x1 + x2) * cruzado
         soma_y += (y1 + y2) * cruzado
 
-    # Caso degenerado: usa media dos vertices
+    # se der usa media dos vertices
     if abs(area_dupla) < 1e-9:
         return (
             sum(x for x, y in pontos) / 4,
             sum(y for x, y in pontos) / 4
         )
-
+    
+    # fórmula do centroide
     cx = soma_x / (3 * area_dupla)
     cy = soma_y / (3 * area_dupla)
     return (cx, cy)
 
 
-# -------------------------------
-# TRANSFORMACAO DE ESCALA
-# -------------------------------
+# escala
 def escalar(pontos, sx, sy, pivo):
     cx, cy = pivo
     resultado = []
 
     for x, y in pontos:
+        # formula da escala
         novo_x = cx + (x - cx) * sx
         novo_y = cy + (y - cy) * sy
         resultado.append((novo_x, novo_y))
@@ -219,11 +212,9 @@ def escalar(pontos, sx, sy, pivo):
     return resultado
 
 
-# -------------------------------
-# TRANSFORMACAO DE ROTACAO
-# -------------------------------
+# rotacao
 def rotacionar(pontos, angulo, pivo):
-    # Rotacao 2D usando matriz de rotacao.
+    # preparar
     rad = math.radians(angulo)
     c = math.cos(rad)
     s = math.sin(rad)
@@ -246,9 +237,7 @@ def rotacionar(pontos, angulo, pivo):
     return resultado
 
 
-# -------------------------------
-# LEITURA DE DADOS
-# -------------------------------
+# dados
 def ler_ponto(numero):
     while True:
         try:
